@@ -1,0 +1,556 @@
+<title>Red Rising Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D system behind three instruments: a top command bar, a left index of worlds, a right dossier. Single dark look by choice: it is space. */
+:root{
+  color-scheme:dark;
+  --void:#05060b; --panel:rgba(12,14,24,.86); --panel-solid:#0c0e18; --line:rgba(214,178,94,.22);
+  --ink:#ece6d6; --dim:#9a9686; --gold:#d6b25e; --red:#d1483a; --rim:#5fb7c9; --ref:#7d8496;
+  --display:"Cinzel","Trajan Pro",Georgia,serif; --body:"Barlow","Segoe UI",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+html,body{height:100%}
+body{background:var(--void);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;overflow:hidden}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lb{position:absolute;left:0;top:0;white-space:nowrap;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);text-shadow:0 0 6px #000,0 0 2px #000;padding:2px 6px;will-change:transform}
+.lb small{color:var(--dim);margin-left:6px;letter-spacing:.02em;text-transform:none}
+.lb.ref{color:var(--ref)}
+.lb.site{font-family:var(--body);font-size:12px;letter-spacing:.02em;text-transform:none;font-weight:600;border-left:2px solid var(--gold);background:rgba(5,6,11,.62);border-radius:0 3px 3px 0}
+.lb.site.battle{border-color:var(--red);color:#ffb4aa}
+.lb.site.mine{border-color:#b0603a}
+.lb.site.wild{border-color:var(--rim)}
+.lb.on{color:var(--gold)}
+.hud{position:fixed;inset:0;pointer-events:none;display:grid;grid-template-columns:230px 1fr 380px;grid-template-rows:auto 1fr;gap:12px;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hud>*{pointer-events:auto;min-width:0}
+.bar{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;background:var(--panel);border:1px solid var(--line);padding:8px 14px;backdrop-filter:blur(8px)}
+.brand{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.14em;color:var(--gold);margin:0;text-transform:uppercase}
+.brand span{color:var(--red)}
+.grp{display:flex;align-items:center;gap:8px}
+.grp>label,.cap{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.seg{display:flex;border:1px solid var(--line)}
+.seg button{padding:5px 10px;font-size:12.5px;font-weight:500;color:var(--dim);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--gold);color:#17130a;font-weight:600}
+.sp{flex:1}
+.rail{grid-row:2;background:var(--panel);border:1px solid var(--line);overflow:auto;padding:8px 0;backdrop-filter:blur(8px);align-self:start;max-height:100%}
+.rail button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:5px 14px;font-size:13.5px}
+.rail button.moon{padding-left:30px;font-size:12.5px;color:#cfc9b8}
+.rail button:hover{background:rgba(214,178,94,.08)}
+.rail button[aria-current="true"]{background:rgba(214,178,94,.16);color:var(--gold)}
+.rail .tag{margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ref);text-transform:uppercase}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ref)}
+.f-core{background:var(--gold)}.f-mars{background:var(--red)}.f-rim{background:var(--rim)}.f-ref{background:var(--ref)}
+.legend{padding:10px 14px 4px;border-top:1px solid var(--line);margin-top:8px;display:grid;gap:4px;font-size:12px;color:var(--dim)}
+.legend div{display:flex;align-items:center;gap:8px}
+.mid{grid-row:2;grid-column:2;pointer-events:none;display:flex;align-items:flex-end;justify-content:center}
+.hint{font-family:var(--mono);font-size:11px;color:var(--dim);background:rgba(5,6,11,.6);padding:4px 10px;margin:0}
+.dossier{grid-row:2;grid-column:3;background:var(--panel);border:1px solid var(--line);overflow:auto;backdrop-filter:blur(8px);align-self:start;max-height:100%}
+.dossier header{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel-solid);z-index:2}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:8px}
+.dossier h2{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:.06em;margin:4px 0 2px;text-wrap:balance}
+.tagline{margin:0;color:#d8d2c0}
+.nav{display:flex;gap:6px;margin-top:10px}
+.nav button{border:1px solid var(--line);padding:4px 9px;font-size:12px;color:var(--dim)}
+.nav button:hover{color:var(--gold);border-color:var(--gold)}
+#sheetToggle{display:none}
+.sec{padding:12px 16px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+.sec h3{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:0 0 8px}
+.sec p{margin:0 0 8px}.sec p:last-child{margin-bottom:0}
+.note{color:var(--dim);font-size:12.5px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin:10px 0 0}
+.stats div{min-width:0}
+.stats dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.stats dd{margin:0;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.cmp{display:flex;align-items:center;gap:14px}
+.cmp svg{flex:none}
+.strip{position:relative;height:34px;margin-top:12px}
+.strip::before{content:"";position:absolute;left:0;right:0;top:9px;height:1px;background:var(--line)}
+.strip i{position:absolute;top:6px;width:7px;height:7px;border-radius:50%;background:var(--ref);transform:translateX(-50%)}
+.strip i.e{background:#6fa8ff}.strip i.s{background:var(--gold);box-shadow:0 0 0 3px rgba(214,178,94,.25)}
+.strip b{position:absolute;top:18px;font-family:var(--mono);font-size:9.5px;font-weight:400;color:var(--dim);transform:translateX(-50%);white-space:nowrap}
+.strip b.l{transform:none}.strip b.r{transform:translateX(-100%)}
+.rule{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.rule li{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.bk{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:#17130a;background:var(--gold);padding:1px 5px;align-self:start;margin-top:2px}
+.bk.b2{background:#c98a4b}.bk.b3{background:var(--red);color:#fff}
+.chars{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.chars li{display:grid;grid-template-columns:10px 1fr;gap:9px}
+.chars .c{width:10px;height:10px;border-radius:50%;margin-top:5px;border:1px solid rgba(255,255,255,.35)}
+.chars strong{font-weight:600}
+.chars em{font-style:normal;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-left:6px}
+.chars span{display:block;color:#cfc9b8;font-size:13px}
+.sites{display:grid;gap:6px}
+.sites button{text-align:left;border:1px solid var(--line);padding:8px 10px;display:block;width:100%}
+.sites button:hover,.sites button[aria-current="true"]{border-color:var(--gold);background:rgba(214,178,94,.08)}
+.sites .t{display:flex;align-items:center;gap:8px;font-weight:600}
+.sites .k{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-left:auto}
+.sites span.d{display:block;color:#cfc9b8;font-size:13px;margin-top:2px}
+.ev{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.ev li{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.ev strong{display:block;font-weight:600}
+.ev span{color:#cfc9b8;font-size:13px}
+@media (max-width:860px){
+  .hud{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;gap:8px;padding-block:8px}
+  .bar{padding:6px 10px;gap:6px 12px}.brand{font-size:15px}.sp{display:none}
+  .rail{grid-row:2;display:flex;overflow-x:auto;padding:0;max-height:none}
+  .rail button,.rail button.moon{width:auto;flex:none;padding:7px 10px;font-size:12.5px}
+  .rail .tag,.legend{display:none}
+  .mid{grid-row:3;grid-column:1}.hint{display:none}
+  .dossier{grid-row:4;grid-column:1;max-height:44vh;align-self:end}
+  .dossier.min{max-height:96px;overflow:hidden}
+  .dossier h2{font-size:22px}
+  #sheetToggle{display:inline-block}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<canvas id="gl" aria-label="3D map of the Red Rising solar system"></canvas>
+<div id="labels"></div>
+<div class="hud">
+  <div class="bar">
+    <h1 class="brand">Red <span>Rising</span> Atlas</h1>
+    <div class="grp"><label id="bkl">Spoilers through</label>
+      <div class="seg" role="group" aria-labelledby="bkl" id="books">
+        <button id="book1" data-b="1">I Red Rising</button><button id="book2" data-b="2">II Golden Son</button><button id="book3" data-b="3">III Morning Star</button>
+      </div></div>
+    <div class="grp"><label id="scl">Distances</label>
+      <div class="seg" role="group" aria-labelledby="scl" id="scale">
+        <button id="scaleStory" data-m="0">Story view</button><button id="scaleTrue" data-m="1">True scale</button>
+      </div></div>
+    <span class="sp"></span>
+    <button id="home" class="cap" style="border:1px solid var(--line);padding:6px 10px">Whole system</button>
+  </div>
+  <nav class="rail" id="rail" aria-label="Worlds"></nav>
+  <div class="mid"><p class="hint" id="hint">Drag to rotate. Scroll to zoom. Click a world or a place.</p></div>
+  <aside class="dossier" id="dossier" aria-live="polite"></aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ---------- DATA ---------- */
+var CASTE={Gold:'#d6b25e',Red:'#c8402f',Obsidian:'#3a3d46',Gray:'#9aa0a6',Blue:'#4aa3ff',Violet:'#9b6bd6',Pink:'#f29bc1',Silver:'#dfe5ea'};
+var FAC={core:{n:'Core, held by the Sovereign',c:0xd6b25e},mars:{n:'Mars, House Augustus',c:0xd1483a},rim:{n:'The Rim, Moon Lords',c:0x5fb7c9},ref:{n:'Shown for scale',c:0x7d8496}};
+var BODIES=[
+{id:'sun',name:'The Sun',kind:'star',fac:'ref',au:0,km:695700,tex:{t:'sun'},
+ tag:'The center of everything the Society rules.',
+ blurb:'All the worlds Gold rules turn around this one star. Compare its size with Earth below: about 109 Earths fit across its face.'},
+{id:'mercury',name:'Mercury',kind:'planet',fac:'core',ref:1,au:0.387,km:2440,yr:0.241,tex:{t:'rock',a:[92,84,78],b:[168,158,146]},
+ tag:'Innermost Core world.',
+ blurb:'A Core world loyal to the Sovereign. No scene in the first three books is set here. It is on the map so you can see how tightly the inner worlds sit together.'},
+{id:'venus',name:'Venus',kind:'planet',fac:'core',au:0.723,km:6052,yr:0.615,atm:'#f3d89a',tex:{t:'gas',bands:5,turb:5,stops:[[0,[196,150,82]],[.5,[232,200,140]],[1,[250,236,200]]]},
+ tag:'Core world of shipbuilders.',
+ blurb:'A rich Core world. House Carthii of Venus builds a large share of the Society\'s warships, which makes Venus a prize in any war for the fleet. Named in the books, never visited in these three.',
+ rule:[{b:1,t:'Held for the Sovereign. House Carthii is its great shipbuilding family.'}]},
+{id:'earth',name:'Earth',kind:'planet',fac:'core',ref:1,au:1,km:6371,yr:1,atm:'#7fb4ff',tex:{t:'terra',sea:.5,seaC:[18,52,110],land:[[0,[60,104,52]],[.5,[128,120,72]],[1,[150,140,120]]],cap:72,clouds:.55},
+ tag:'Your yardstick. Humanity started here.',
+ blurb:'Earth is the reference for every size and distance in this atlas. In the story it is a conquered Core world: seven centuries before Darrow, the Golds of Luna broke Earth\'s rule and built the Society on the ruins. The first three books never land here.',
+ rule:[{b:1,t:'A Core world under the Sovereign on Luna.'}],
+ events:[{b:1,h:'The lie told in the mines',x:'The Reds of Lykos are taught that Earth is dying and that they are pioneers making Mars livable for the rest of humanity.'}]},
+{id:'luna',name:'Luna',kind:'moon',parent:'earth',fac:'core',md:4.6,dkm:384400,km:1737,tex:{t:'rock',a:[70,72,80],b:[176,176,184]},lights:900,
+ tag:'Seat of the Sovereign. One city-moon that rules eight planets.',
+ blurb:'Earth\'s moon is the capital of the Society. The Sovereign rules from the Citadel, the Senate sits here, and the surface is one stacked city. Power in this story means holding Luna.',
+ rule:[{b:1,t:'Octavia au Lune, Sovereign of the Society.'},{b:3,t:'After the Battle of Luna, Virginia au Augustus (Mustang) is named Sovereign.'}],
+ chars:[{n:'Octavia au Lune',c:'Gold',tie:'Rules from here',x:'The Sovereign. She took the throne from her own father.'},
+  {n:'Lysander au Lune',c:'Gold',tie:'From Luna',b:2,x:'Octavia\'s young grandson and heir, raised in the Citadel.'},
+  {n:'Aja au Grimmus',c:'Gold',tie:'Based here',b:2,x:'The Protean Knight, the Sovereign\'s deadliest bodyguard.'}],
+ sites:[{id:'citadel',n:'The Citadel',k:'fort',lat:24,lon:-18,b:2,x:'The Sovereign\'s palace and court. Darrow duels Cassius here in book II and returns in chains, by design, in book III.'},
+  {id:'lostcity',n:'The Lost City',k:'city',lat:-12,lon:34,b:2,x:'Luna\'s lowColor slums. Cast off by Augustus, Darrow meets the Sons of Ares here and strikes his bargain with the Jackal.'},
+  {id:'lunabattle',n:'Battle of Luna',k:'battle',lat:48,lon:-70,b:3,x:'The Rising\'s fleet and the Sovereign\'s meet above the capital. The war for the Core is decided here.'}],
+ events:[{b:2,h:'The gala and the duel',x:'About to be sold off by Augustus, Darrow crashes the Sovereign\'s gala, duels Cassius au Bellona and takes his arm. Augustus and Bellona are now at open war.'},
+  {b:2,h:'Escape from the Citadel',x:'Aja mortally wounds Quinn as Darrow\'s party flees. Darrow and the Howlers board and seize a warship in orbit, which he renames the Pax.'},
+  {b:3,h:'The trap inside the throne room',x:'Cassius delivers Darrow and Mustang to Octavia as prisoners, with Sevro apparently dead. It is a ruse. Octavia and Aja die, the Jackal sets off nuclear bombs hidden in Luna\'s cities before he is taken, and Mustang is proclaimed Sovereign.'}]},
+{id:'mars',name:'Mars',kind:'planet',fac:'mars',au:1.524,km:3390,yr:1.881,atm:'#ff9c7a',tex:{t:'terra',sea:.4,seaC:[30,70,96],land:[[0,[96,112,62]],[.3,[168,92,52]],[.7,[190,84,48]],[1,[132,60,40]]],cap:76,clouds:.72,big:1},lights:120,
+ tag:'Where it starts. Darrow\'s home and the heart of the story.',
+ blurb:'Mars was terraformed centuries ago. It has seas, forests and great Gold cities, while Reds dig helium-3 beneath it believing the surface is still dead. Most of book I, the end of book II and the first half of book III happen here.',
+ rule:[{b:1,t:'ArchGovernor Nero au Augustus, of House Augustus. House Bellona is his great rival on Mars.'},
+  {b:2,t:'The Sovereign backs House Bellona, who seize Mars. Darrow\'s Iron Rain on Agea wins it back for Augustus.'},
+  {b:3,t:'Adrius au Augustus, the Jackal, rules as ArchGovernor after murdering his father at the Triumph.'}],
+ chars:[{n:'Darrow of Lykos',c:'Red',tie:'From Mars',x:'Helldiver of Lambda clan in the Lykos mine. Carved into a Gold to break the Society from inside. Later called the Reaper.'},
+  {n:'Eo of Lykos',c:'Red',tie:'From Mars',x:'Darrow\'s wife. Hanged for singing a forbidden song. Her dream drives the whole series.'},
+  {n:'Virginia au Augustus (Mustang)',c:'Gold',tie:'From Mars',x:'Daughter of the ArchGovernor. Leads House Minerva at the Institute.'},
+  {n:'Adrius au Augustus (the Jackal)',c:'Gold',tie:'From Mars',x:'Nero\'s son, Mustang\'s twin. Wins by cruelty and patience.'},
+  {n:'Nero au Augustus',c:'Gold',tie:'Rules from here',x:'ArchGovernor of Mars. Orders Eo\'s death, then takes Darrow into his house.'},
+  {n:'Cassius au Bellona',c:'Gold',tie:'From Mars',x:'Darrow\'s first friend at the Institute and then his sworn enemy.'},
+  {n:'Sevro au Barca',c:'Gold',tie:'From Mars',x:'Leader of the Howlers. Smallest pick of the draft and Darrow\'s most loyal friend.'},
+  {n:'Fitchner au Barca',c:'Gold',tie:'Based here',x:'Proctor of House Mars at the Institute.'},
+  {n:'The Telemanuses: Kavax, Daxo, Pax',c:'Gold',tie:'From Mars',x:'Giant bannermen of House Augustus. Pax fights beside Darrow at the Institute.'},
+  {n:'Dancer',c:'Red',tie:'From Mars',x:'Sons of Ares lieutenant who recruits Darrow.'},
+  {n:'Mickey',c:'Violet',tie:'Based in Yorkton',x:'The Carver who remakes Darrow\'s body as a Gold.'},
+  {n:'Ragnar Volarus',c:'Obsidian',tie:'From the south pole',b:2,x:'A Stained warrior from the Valkyrie Spires. Given to Darrow as a slave, freed as a brother.'},
+  {n:'Sefi',c:'Obsidian',tie:'From the south pole',b:3,x:'Ragnar\'s sister. Unites the tribes for the Rising.'}],
+ sites:[{id:'lykos',n:'Lykos',k:'mine',lat:-34,lon:22,b:1,x:'Red mining colony deep underground. Darrow drills helium-3 here. Eo is hanged in its common for her song.'},
+  {id:'yorkton',n:'Yorkton',k:'city',lat:31,lon:44,b:1,x:'Surface city where Darrow first sees the sky, and where Mickey carves him into a Gold while Matteo teaches him to pass.'},
+  {id:'agea',n:'Agea',k:'city',lat:6,lon:-22,b:1,x:'Capital of Mars and seat of the ArchGovernor\'s Citadel. Darrow sits the Institute entrance exam here.'},
+  {id:'institute',n:'The Institute, Valles Marineris',k:'fort',lat:-14,lon:-59,b:1,x:'A canyon the length of a continent, used as a war school. Twelve houses of young Golds enslave each other until one wins.'},
+  {id:'olympus',n:'Olympus Mons',k:'fort',lat:18.6,lon:-133.8,b:1,x:'The Proctors watch the Institute from a floating fortress above the tallest mountain in the solar system. Darrow storms it.'},
+  {id:'lionsrain',n:'The Lion\'s Rain',k:'battle',lat:11,lon:-12,b:2,x:'Darrow drops an army from orbit in starShells to retake Agea from the Bellona. The first Iron Rain in a generation.'},
+  {id:'attica',n:'Attica',k:'fort',lat:56,lon:104,b:3,x:'The Jackal\'s mountain fortress. Darrow is kept in a lightless stone box here until Sevro\'s rescue.'},
+  {id:'tinos',n:'Tinos',k:'city',lat:-46,lon:-98,b:3,x:'The Sons of Ares\' hidden city in a cavern of stalactites. Refuge for hundreds of thousands and base of the Rising on Mars.'},
+  {id:'spires',n:'Valkyrie Spires and Asgard',k:'wild',lat:-80,lon:10,b:3,x:'The frozen south pole, home of the Obsidian tribes. Golds pose as their gods from Asgard above the ice.'}],
+ events:[{b:1,h:'Eo\'s song',x:'Eo sings the forbidden song before the ArchGovernor and is hanged. Darrow buries her, is hanged for it, and wakes among the Sons of Ares.'},
+  {b:1,h:'The Carving',x:'In Yorkton, Darrow learns Mars has been livable for centuries. Mickey rebuilds him as a Gold.'},
+  {b:1,h:'The Passage',x:'Darrow\'s first test at the Institute is to kill Julian au Bellona, Cassius\'s brother, with his bare hands.'},
+  {b:1,h:'War of the houses',x:'Darrow rises in House Mars, puts down Titus, is betrayed by Cassius, allies with Mustang and learns to lead free soldiers instead of slaves.'},
+  {b:1,h:'Storming Olympus',x:'Darrow takes the Proctors\' fortress, exposes the rigged game and wins the Institute. Pax dies at the Jackal\'s hand. Darrow kneels to Augustus.'},
+  {b:2,h:'The Lion\'s Rain',x:'Darrow leads the Iron Rain that retakes Agea. Mustang, Sevro, Ragnar and the Howlers drop with him.'},
+  {b:2,h:'Home to Lykos',x:'Darrow returns to the mine, sees his mother, and lets Mustang learn what he is.'},
+  {b:2,h:'The Triumph',x:'At Darrow\'s victory parade in Agea, Roque and the Jackal spring the Sovereign\'s trap. Nero and Lorn are killed, Fitchner\'s head is delivered in a box, and Darrow is taken.'},
+  {b:3,h:'Out of the dark',x:'After months in the Jackal\'s stone box at Attica, Darrow is broken out by Sevro, Holiday and Trigg and carried to Tinos.'},
+  {b:3,h:'The gods of the ice',x:'At the south pole Aja kills Ragnar. Darrow and Mustang show Sefi that the gods of Asgard are only Golds, and the Obsidians join the Rising.'}]},
+{id:'phobos',name:'Phobos',kind:'moon',parent:'mars',fac:'mars',md:2.3,dkm:9376,km:11.3,tex:{t:'rock',a:[58,52,50],b:[130,118,108]},lights:500,
+ tag:'A hive city in orbit, and the spark of the Rising.',
+ blurb:'Mars\'s inner moon is tiny in life (about 22 km across) but the books pack it with towers, docks and tens of millions of people. It is the commercial gate to Mars.',
+ rule:[{b:3,t:'Run in practice by Quicksilver\'s money under the Jackal\'s rule, until Darrow takes it for the Rising.'}],
+ chars:[{n:'Regulus ag Sun (Quicksilver)',c:'Silver',tie:'Based here',b:3,x:'The richest man in the worlds. His towers stand on Phobos.'}],
+ sites:[{id:'qs',n:'Quicksilver\'s towers',k:'city',lat:20,lon:10,b:3,x:'Sevro\'s Sons raid these towers to seize Quicksilver and learn he helped found the Sons of Ares with Fitchner.'},
+  {id:'phobosrise',n:'Phobos rises',k:'battle',lat:-25,lon:-60,b:3,x:'Darrow shows his face to the worlds in a broadcast from Phobos and the moon\'s lowColors revolt.'}],
+ events:[{b:3,h:'The Reaper lives',x:'Darrow\'s broadcast from Phobos tells the Society he was born a Red. The moon rises and the war becomes open revolution.'}]},
+{id:'deimos',name:'Deimos',kind:'moon',parent:'mars',fac:'mars',ref:1,md:3.5,dkm:23463,km:6.2,tex:{t:'rock',a:[66,60,56],b:[140,130,120]},
+ tag:'Mars\'s small outer moon.',blurb:'About 12 km across. It plays almost no part in the first three books and is here for completeness.'},
+{id:'belt',name:'The Belt',kind:'belt',fac:'ref',au:2.7,km:470,yr:4.6,
+ tag:'Asteroids, mining rock and the Academy\'s war games.',
+ blurb:'A wide ring of rock between Mars and Jupiter and the dividing line between Core and Rim. Its largest body, Ceres, is only 940 km across. The size shown below is Ceres.',
+ chars:[{n:'Karnus au Bellona',c:'Gold',tie:'Fights here',b:2,x:'Cassius\'s brutal older brother. Beats Darrow in the Academy\'s final game.'}],
+ events:[{b:2,h:'Defeat at the Academy',x:'Book II opens with Darrow commanding a fleet in the Academy\'s final war game among asteroids. Karnus au Bellona rams his ship and wins. Augustus decides to sell Darrow\'s contract. The books do not fix the Academy\'s orbit, so it is shown here.'}]},
+{id:'jupiter',name:'Jupiter',kind:'planet',fac:'rim',au:5.203,km:69911,yr:11.86,atm:'#e8c79a',tex:{t:'gas',bands:16,turb:2.4,spot:1,stops:[[0,[150,98,62]],[.35,[214,170,120]],[.6,[240,222,190]],[.8,[196,140,96]],[1,[232,206,170]]]},
+ tag:'Gateway to the Rim. Its moons hold the real power.',
+ blurb:'Nobody lives on Jupiter. The story is on its four great moons, each ruled by a Gold Moon Lord. Notice the gap from Mars: at true scale Jupiter is more than three times farther from the Sun, which is why the Rim thinks of itself as a separate people.',
+ rule:[{b:2,t:'Governors of the Gas Giants, sworn to the Sovereign and resentful of her.'},{b:3,t:'Romulus au Raa leads the Moon Lords in open revolt for Rim independence.'}],
+ events:[{b:3,h:'Battle of Ilium',x:'Darrow\'s outnumbered fleet meets Roque au Fabii\'s Sword Armada among Jupiter\'s moons. Darrow boards the flagship Colossus with mining clawDrills. Roque takes his own life. The captured Colossus becomes the Morning Star.'}]},
+{id:'io',name:'Io',kind:'moon',parent:'jupiter',fac:'rim',md:1.9,dkm:421700,km:1822,tex:{t:'io'},lights:40,
+ tag:'Volcanic home of House Raa.',
+ blurb:'A harsh sulfur moon. House Raa keeps the old Gold ways here: honor, austerity and distrust of Luna.',
+ rule:[{b:3,t:'Romulus au Raa, Lord of the Dust, first among the Moon Lords.'}],
+ chars:[{n:'Romulus au Raa',c:'Gold',tie:'From Io',b:3,x:'Leader of the Rim. Honorable, proud and dangerous to lie to.'}],
+ sites:[{id:'raa',n:'House Raa stronghold',k:'fort',lat:12,lon:30,b:3,x:'Darrow and Mustang come to parley and find the Sovereign\'s envoys already here. Darrow wins Romulus by promising the Rim its freedom.'},
+  {id:'ilium',n:'Battle of Ilium',k:'battle',lat:-20,lon:-80,b:3,x:'Fought in the space around Io and its sister moons. See Jupiter for the full account.'}],
+ events:[{b:3,h:'The bargain with the Rim',x:'Darrow allies with Romulus against Roque\'s armada. The price is independence for the Rim, and a lie Darrow will have to live with.'}]},
+{id:'europa',name:'Europa',kind:'moon',parent:'jupiter',fac:'rim',md:2.6,dkm:671100,km:1561,tex:{t:'ice',a:[150,170,190],b:[236,240,244],crack:[150,96,80]},lights:25,
+ tag:'Ocean moon where Lorn au Arcos retired.',
+ blurb:'A world of deep sea under open sky in the books. Lorn au Arcos lives here with his grandchildren, far from Luna\'s politics.',
+ chars:[{n:'Lorn au Arcos',c:'Gold',tie:'Lives here',b:2,x:'The former Rage Knight and greatest razor master alive. He taught Darrow to fight.'}],
+ sites:[{id:'lorn',n:'Lorn\'s island estate',k:'city',lat:8,lon:-40,b:2,x:'Darrow arrives to ask his old teacher to join the war against the Sovereign.'}],
+ events:[{b:2,h:'Forcing Lorn\'s hand',x:'Lorn refuses to fight. Darrow has arranged for Aja and the Sovereign\'s forces to follow him to Europa, leaving Lorn no choice but to join House Augustus.'}]},
+{id:'ganymede',name:'Ganymede',kind:'moon',parent:'jupiter',fac:'rim',md:3.4,dkm:1070400,km:2634,tex:{t:'terra',sea:.46,seaC:[40,66,84],land:[[0,[96,104,88]],[.6,[130,120,104]],[1,[176,170,160]]],cap:66,clouds:.8},lights:160,
+ tag:'Largest moon in the system, with the Rim\'s great shipyards.',
+ blurb:'Bigger than Mercury. Its orbital dockyards build the Rim\'s fleets, which makes Ganymede the Rim\'s strategic center.',
+ rule:[{b:3,t:'A Moon Lord\'s seat within Romulus au Raa\'s alliance.'}],
+ sites:[{id:'docks',n:'Ganymede Dockyards',k:'battle',lat:2,lon:60,b:3,x:'The Rim\'s shipyards in orbit. Destroyed during the Battle of Ilium.'}],
+ events:[{b:3,h:'The dockyards burn',x:'During Ilium, Darrow has the Ganymede Dockyards destroyed so the Rim cannot threaten the Rising later, and lets Roque\'s fleet take the blame.'}]},
+{id:'callisto',name:'Callisto',kind:'moon',parent:'jupiter',fac:'rim',ref:1,md:4.4,dkm:1882700,km:2410,tex:{t:'rock',a:[48,44,42],b:[120,112,100]},
+ tag:'Fourth of the great moons.',blurb:'One of the four Galilean moons held by the Moon Lords. No scenes are set here in the first three books.'},
+{id:'saturn',name:'Saturn',kind:'planet',fac:'rim',ref:1,au:9.537,km:58232,yr:29.46,ring:1,atm:'#ecd9a8',tex:{t:'gas',bands:12,turb:1.2,stops:[[0,[190,160,110]],[.5,[230,208,160]],[1,[244,232,200]]]},
+ tag:'Rim giant. Remember Rhea.',
+ blurb:'Nearly twice as far out as Jupiter. Saturn matters to the story for one reason: the scar on its moon Rhea.'},
+{id:'rhea',name:'Rhea',kind:'moon',parent:'saturn',fac:'rim',md:2.7,dkm:527100,km:764,tex:{t:'rock',a:[40,36,36],b:[120,116,118]},
+ tag:'The moon the Sovereign burned.',
+ blurb:'When the Rim last rebelled, Octavia had Rhea bombed with nuclear fire. The Rim has not forgotten.',
+ chars:[{n:'Magnus au Grimmus (the Ash Lord)',c:'Gold',tie:'Burned it',b:2,x:'Octavia\'s warlord and Aja\'s father. He earned his name here.'}],
+ events:[{b:2,h:'The burning of Rhea',x:'Told as history: the Ash Lord burned Rhea on Octavia\'s order to end the last Rim rebellion. It explains why the Moon Lords fear and hate the Core.'}]},
+{id:'titan',name:'Titan',kind:'moon',parent:'saturn',fac:'rim',ref:1,md:3.7,dkm:1221900,km:2575,atm:'#e8a04a',tex:{t:'gas',bands:3,turb:3,stops:[[0,[170,104,40]],[1,[226,160,74]]]},
+ tag:'Saturn\'s largest moon.',blurb:'A Rim holding, mentioned but not visited in the first three books.'},
+{id:'uranus',name:'Uranus',kind:'planet',fac:'rim',ref:1,au:19.19,km:25362,yr:84.0,atm:'#a8e4ea',tex:{t:'gas',bands:4,turb:.6,stops:[[0,[130,196,206]],[1,[176,226,232]]]},
+ tag:'Far Rim.',blurb:'Twice Saturn\'s distance again. Named as part of the Rim, never visited in these books. At true scale, look how empty the outer system is.'},
+{id:'neptune',name:'Neptune',kind:'planet',fac:'rim',ref:1,au:30.07,km:24622,yr:164.8,atm:'#6f93ff',tex:{t:'gas',bands:6,turb:1.4,stops:[[0,[40,70,170]],[1,[90,130,230]]]},
+ tag:'Edge of the Rim.',blurb:'Thirty times farther from the Sun than Earth. Sunlight takes over four hours to arrive. Shown for scale.'},
+{id:'pluto',name:'Pluto',kind:'planet',fac:'rim',ref:1,au:39.48,km:1188,yr:248,tex:{t:'ice',a:[120,96,80],b:[222,206,186],crack:[90,70,60]},
+ tag:'The far edge of the Society.',blurb:'Smaller than Luna and about forty times Earth\'s distance from the Sun. House Pluto at the Institute, the Jackal\'s house, is named for the god, not for this world.'}
+];
+var BY={};BODIES.forEach(function(b){BY[b.id]=b;});
+
+/* ---------- STATE ---------- */
+var state={book:1,mode:0,focus:'sun',site:null};
+try{var sb=+localStorage.getItem('rra-book');if(sb>=1&&sb<=3)state.book=sb;}catch(e){}
+
+/* ---------- NOISE + TEXTURES ---------- */
+function h3(x,y,z,s){var h=Math.imul(x,374761393)^Math.imul(y,668265263)^Math.imul(z,1274126177)^Math.imul(s,144665);h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return (h>>>0)/4294967295;}
+function n3(x,y,z,s){var xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),xf=x-xi,yf=y-yi,zf=z-zi;
+ var u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=zf*zf*(3-2*zf);
+ function L(a,b,t){return a+(b-a)*t;}
+ return L(L(L(h3(xi,yi,zi,s),h3(xi+1,yi,zi,s),u),L(h3(xi,yi+1,zi,s),h3(xi+1,yi+1,zi,s),u),v),
+          L(L(h3(xi,yi,zi+1,s),h3(xi+1,yi,zi+1,s),u),L(h3(xi,yi+1,zi+1,s),h3(xi+1,yi+1,zi+1,s),u),v),w);}
+function fbm(x,y,z,o,s){var a=.5,f=1,t=0,n=0;for(var i=0;i<o;i++){t+=a*n3(x*f,y*f,z*f,s+i);n+=a;a*=.5;f*=2.03;}return t/n;}
+function ramp(st,t){t=Math.max(0,Math.min(1,t));for(var i=1;i<st.length;i++){if(t<=st[i][0]){var a=st[i-1],b=st[i],k=(t-a[0])/((b[0]-a[0])||1);return [a[1][0]+(b[1][0]-a[1][0])*k,a[1][1]+(b[1][1]-a[1][1])*k,a[1][2]+(b[1][2]-a[1][2])*k];}}return st[st.length-1][1];}
+function mix(a,b,k){return [a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k];}
+function ll2v(lat,lon){var la=lat*Math.PI/180,ph=(lon+180)*Math.PI/180;return [-Math.cos(ph)*Math.cos(la),Math.sin(la),Math.sin(ph)*Math.cos(la)];}
+function shade(tx,seed){
+ var t=tx.t;
+ if(t==='sun')return function(p){var v=fbm(p[0]*5,p[1]*5,p[2]*5,5,seed);return ramp([[0,[255,120,20]],[.5,[255,190,70]],[1,[255,246,200]]],v*1.3-.1);};
+ if(t==='rock')return function(p){var v=fbm(p[0]*3,p[1]*3,p[2]*3,6,seed),c=mix(tx.a,tx.b,v*1.25-.1),s=.82+.36*n3(p[0]*38,p[1]*38,p[2]*38,seed+9);
+   var cr=n3(p[0]*11,p[1]*11,p[2]*11,seed+5);if(cr>.74)s*=.78;return [c[0]*s,c[1]*s,c[2]*s];};
+ if(t==='gas')return function(p,lat){var w=fbm(p[0]*3,p[1]*6,p[2]*3,5,seed),b=Math.sin(lat/90*tx.bands+(w-.5)*tx.turb*3),c=ramp(tx.stops,(b+1)/2*.8+w*.2);
+   if(tx.spot){var dx=p[0]-.55,dy=p[1]+.37,dz=p[2]-.74,d=Math.sqrt(dx*dx*.5+dy*dy*2.4+dz*dz*.5);if(d<.16)c=mix([178,74,46],c,d/.16);}return c;};
+ if(t==='ice')return function(p){var v=fbm(p[0]*2.5,p[1]*2.5,p[2]*2.5,5,seed),c=mix(tx.a,tx.b,v*1.2),r=1-Math.abs(2*fbm(p[0]*5,p[1]*5,p[2]*5,4,seed+3)-1);
+   if(r>.93)c=mix(c,tx.crack,(r-.93)/.07*.8);return c;};
+ if(t==='io')return function(p){var v=fbm(p[0]*3,p[1]*3,p[2]*3,6,seed),c=ramp([[0,[150,90,30]],[.4,[214,170,50]],[.7,[240,220,110]],[1,[250,244,210]]],v*1.4-.2),k=n3(p[0]*9,p[1]*9,p[2]*9,seed+7);
+   if(k>.78)c=mix(c,[40,20,12],Math.min(1,(k-.78)/.08));return c;};
+ return function(p,lat){ // terra
+   var hgt=fbm(p[0]*2.1,p[1]*2.1,p[2]*2.1,7,seed),c;
+   if(hgt<tx.sea){var d=(tx.sea-hgt)/tx.sea;c=mix(tx.seaC,[tx.seaC[0]*.45,tx.seaC[1]*.45,tx.seaC[2]*.6],Math.min(1,d*3));}
+   else{var e=(hgt-tx.sea)/(1-tx.sea),m=fbm(p[0]*5,p[1]*5,p[2]*5,4,seed+11);c=ramp(tx.land,e*1.6+(m-.5)*.7);var s=.85+.3*n3(p[0]*30,p[1]*30,p[2]*30,seed+2);c=[c[0]*s,c[1]*s,c[2]*s];}
+   var ice=Math.abs(lat)+(fbm(p[0]*6,p[1]*6,p[2]*6,3,seed+4)-.5)*22;if(ice>tx.cap)c=mix(c,[238,242,246],Math.min(1,(ice-tx.cap)/5));
+   var cl=fbm(p[0]*3.4+7,p[1]*5+3,p[2]*3.4,5,seed+21);if(cl>tx.clouds)c=mix(c,[245,247,250],Math.min(.85,(cl-tx.clouds)*4));
+   return c;};
+}
+function makeTex(tx,seed,W){
+ var H=W/2,cv=document.createElement('canvas');cv.width=W;cv.height=H;var g=cv.getContext('2d'),im=g.createImageData(W,H),d=im.data,f=shade(tx,seed),i=0;
+ for(var y=0;y<H;y++){var lat=90-180*(y+.5)/H;for(var x=0;x<W;x++){var p=ll2v(lat,(x+.5)/W*360-180),c=f(p,lat);d[i++]=c[0];d[i++]=c[1];d[i++]=c[2];d[i++]=255;}}
+ g.putImageData(im,0,0);return cv;
+}
+function rnd(seed){var s=seed>>>0;return function(){s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};}
+function lightsTex(b,seed){
+ var W=1024,H=512,cv=document.createElement('canvas');cv.width=W;cv.height=H;var g=cv.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,W,H);var r=rnd(seed);
+ function blob(lat,lon,n,spread){for(var i=0;i<n;i++){var a=r()*6.283,q=Math.pow(r(),1.6)*spread,la=lat+Math.sin(a)*q,lo=lon+Math.cos(a)*q/Math.max(.2,Math.cos(la*Math.PI/180));
+   var x=((lo+180)/360*W+W)%W,y=(90-la)/180*H;g.fillStyle='rgba(255,'+(190+r()*50|0)+','+(110+r()*70|0)+','+(.35+r()*.6)+')';g.fillRect(x,y,1+r()*1.4,1+r()*1.4);}}
+ (b.sites||[]).forEach(function(s){if(s.k==='city'||s.k==='fort')blob(s.lat,s.lon,260,7);if(s.k==='mine')blob(s.lat,s.lon,40,2);});
+ for(var k=0;k<(b.lights||0)/10;k++){blob(Math.asin(r()*2-1)*57.3*.8,r()*360-180,10+r()*40,2+r()*5);}
+ return cv;
+}
+
+/* ---------- SCENE ---------- */
+var canvas=document.getElementById('gl');
+var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,logarithmicDepthBuffer:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+var scene=new THREE.Scene();scene.background=new THREE.Color(0x05060b);
+var camera=new THREE.PerspectiveCamera(42,1,.01,40000);
+scene.add(camera);
+scene.add(new THREE.AmbientLight(0xffffff,.16));
+var sunLight=new THREE.PointLight(0xfff2dc,2.1,0,0);scene.add(sunLight);
+var head=new THREE.DirectionalLight(0xdfe6ff,0);head.position.set(.4,.5,1);camera.add(head);camera.add(head.target);head.target.position.set(0,0,-1);
+
+(function stars(){var n=5000,pos=new Float32Array(n*3),col=new Float32Array(n*3),r=rnd(77);
+ for(var i=0;i<n;i++){var u=r()*2-1,a=r()*6.283,q=Math.sqrt(1-u*u),R=15000;pos[i*3]=q*Math.cos(a)*R;pos[i*3+1]=u*R;pos[i*3+2]=q*Math.sin(a)*R;var k=.45+r()*.55,t=r();col[i*3]=k*(t>.8?1:.85);col[i*3+1]=k*.9;col[i*3+2]=k*(t<.2?1:.85);}
+ var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+ scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:1.6,sizeAttenuation:false,vertexColors:true})));})();
+
+function glowTex(inner,css){var c=document.createElement('canvas');c.width=c.height=256;var g=c.getContext('2d'),gr=g.createRadialGradient(128,128,0,128,128,128);
+ if(inner){gr.addColorStop(0,css);gr.addColorStop(.25,css);gr.addColorStop(1,'rgba(0,0,0,0)');}
+ else{gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.74,'rgba(0,0,0,0)');gr.addColorStop(.8,css);gr.addColorStop(1,'rgba(0,0,0,0)');}
+ g.fillStyle=gr;g.fillRect(0,0,256,256);return new THREE.CanvasTexture(c);}
+function dispR(b){if(b.kind==='star')return 4.2;if(b.kind==='belt')return .3;return Math.max(.17,.9*Math.pow(b.km/6371,.4));}
+function rStory(au){return 6+16*Math.pow(au,.55);}
+function rTrue(au){return 6+40*au;}
+var unitCircle=(function(){var p=[];for(var i=0;i<=256;i++){var a=i/256*6.2832;p.push(Math.cos(a),0,Math.sin(a));}var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));return g;})();
+var sphereGeo=new THREE.SphereGeometry(1,96,64),boxGeo=new THREE.BoxGeometry(1,1,1);
+var SITE_COL={city:0xffcf7a,fort:0xdfe8ff,mine:0xb0603a,battle:0xff5a48,wild:0x8fe0ee};
+var maxAniso=renderer.capabilities.getMaxAnisotropy();
+
+BODIES.forEach(function(b,i){
+ b.R=dispR(b);b.grp=new THREE.Group();b.a0=(i*2.399)%6.283;b.sites=b.sites||[];
+ if(b.kind==='belt'){
+  var n=2600,pos=new Float32Array(n*3),r=rnd(5);b.beltU=[];
+  for(var k=0;k<n;k++){b.beltU.push([r()*6.283,(r()+r()+r())/3*2-1,(r()-.5)]);}
+  var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  b.pts=new THREE.Points(g,new THREE.PointsMaterial({color:0x9b9484,size:1.5,sizeAttenuation:false}));scene.add(b.pts);
+  b.mesh=new THREE.Mesh(sphereGeo,new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(makeTex({t:'rock',a:[70,66,62],b:[150,142,132]},40,256)),roughness:1}));
+  b.mesh.scale.setScalar(b.R);b.grp.add(b.mesh);scene.add(b.grp);return;
+ }
+ var W=b.tex.big?2048:(b.sites.length?1024:512),map=new THREE.CanvasTexture(makeTex(b.tex,i*13+1,W));map.anisotropy=maxAniso;
+ var mat;
+ if(b.kind==='star'){mat=new THREE.MeshBasicMaterial({map:map});}
+ else{mat=new THREE.MeshStandardMaterial({map:map,roughness:.92,metalness:0});
+  if(b.lights||b.sites.length){mat.emissiveMap=new THREE.CanvasTexture(lightsTex(b,i+3));mat.emissive=new THREE.Color(0xffffff);mat.emissiveIntensity=.9;}}
+ b.mesh=new THREE.Mesh(sphereGeo,mat);b.mesh.scale.setScalar(b.R);b.grp.add(b.mesh);
+ if(b.kind==='star'){var sg=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(true,'rgba(255,196,110,.9)'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));sg.scale.setScalar(b.R*7);b.grp.add(sg);}
+ if(b.atm){var at=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(false,b.atm),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:.55}));at.scale.setScalar(b.R*2.62);b.grp.add(at);}
+ if(b.ring){var rc=document.createElement('canvas');rc.width=rc.height=512;var rg=rc.getContext('2d'),gr=rg.createRadialGradient(256,256,140,256,256,256);
+  [[0,'rgba(0,0,0,0)'],[.05,'rgba(200,180,140,.5)'],[.3,'rgba(230,214,170,.85)'],[.45,'rgba(60,50,40,.15)'],[.5,'rgba(220,200,160,.7)'],[.9,'rgba(190,170,130,.4)'],[1,'rgba(0,0,0,0)']].forEach(function(s){gr.addColorStop(s[0],s[1]);});
+  rg.fillStyle=gr;rg.fillRect(0,0,512,512);
+  var ring=new THREE.Mesh(new THREE.RingGeometry(b.R*1.25,b.R*2.25,128),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(rc),side:THREE.DoubleSide,transparent:true,depthWrite:false}));
+  ring.rotation.x=Math.PI/2;var tilt=new THREE.Group();tilt.rotation.z=.4;tilt.add(ring);b.grp.add(tilt);b.mesh.rotation.z=.4;}
+ // orbit line
+ var oc=FAC[b.fac].c;b.orbit=new THREE.LineLoop(unitCircle,new THREE.LineBasicMaterial({color:oc,transparent:true,opacity:b.parent?.35:.28}));
+ if(b.parent){var P=BY[b.parent];b.orbR=P.R*b.md+b.R;b.orbit.scale.setScalar(b.orbR);P.grp.add(b.orbit);P.grp.add(b.grp);}
+ else if(b.kind!=='star'){scene.add(b.orbit);scene.add(b.grp);} else scene.add(b.grp);
+ // sites
+ b.sites.forEach(function(s,si){
+  var n=new THREE.Vector3().fromArray(ll2v(s.lat,s.lon)),q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),n),g=new THREE.Group(),r=rnd(si*31+i*7+1),col=SITE_COL[s.k];
+  s.nv=n;s.grp=g;s.body=b;
+  var t1=new THREE.Vector3(0,1,0).cross(n);if(t1.lengthSq()<1e-4)t1.set(1,0,0);t1.normalize();var t2=new THREE.Vector3().crossVectors(n,t1);
+  var ring=new THREE.Mesh(new THREE.TorusGeometry(s.k==='battle'?.085:.06,.0035,6,48),new THREE.MeshBasicMaterial({color:col}));
+  ring.quaternion.copy(q).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/2));ring.position.copy(n).multiplyScalar(1.004);g.add(ring);
+  var cnt={city:60,fort:22,mine:14,battle:9,wild:16}[s.k],spread={city:.05,fort:.028,mine:.03,battle:.07,wild:.045}[s.k];
+  var m=new THREE.MeshStandardMaterial({color:s.k==='mine'?0x5a3a2c:(s.k==='wild'?0xcfeef4:(s.k==='battle'?0x703028:0x8d8a86)),emissive:col,emissiveIntensity:s.k==='mine'?.25:.55,roughness:.6});
+  var inst=new THREE.InstancedMesh(boxGeo,m,cnt),d=new THREE.Object3D();
+  for(var k=0;k<cnt;k++){var a=r()*6.283,rr=Math.sqrt(r())*spread,cen=1-rr/spread,w=.004+r()*.007,
+    hh={city:.008+cen*cen*.05*r()+.006,fort:.01+cen*.03,mine:.004+r()*.006,battle:.003+r()*.004,wild:.01+r()*.04}[s.k];
+   if(s.k==='fort'&&k===0){rr=0;hh=.085;w=.012;} if(s.k==='wild')w*=.6;
+   var p=n.clone().addScaledVector(t1,Math.cos(a)*rr).addScaledVector(t2,Math.sin(a)*rr).normalize();
+   var lift=s.k==='battle'?.03+r()*.07:0; if(s.k==='battle'){hh=.004;w=.006+r()*.012;}
+   d.position.copy(p).multiplyScalar(1+hh/2+lift);d.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),p);
+   if(s.k==='battle')d.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(r()*3,r()*3,r()*3)));
+   d.scale.set(w,hh,s.k==='battle'?w*3:w*(.6+r()*.8));d.updateMatrix();inst.setMatrixAt(k,d.matrix);}
+  g.add(inst);b.mesh.add(g);
+ });
+});
+
+/* ---------- LABELS ---------- */
+var labelsEl=document.getElementById('labels'),LABELS=[];
+BODIES.forEach(function(b){
+ var el=document.createElement('button');el.className='lb'+(b.ref||b.fac==='ref'?' ref':'');el.id='lb-'+b.id;
+ el.innerHTML=b.name+(b.au?'<small>'+b.au.toFixed(b.au<10?2:1)+' AU</small>':'');
+ el.addEventListener('click',function(){focus(b.id);});labelsEl.appendChild(el);b.el=el;
+ b.sites.forEach(function(s){var se=document.createElement('button');se.className='lb site '+s.k;se.id='lb-'+b.id+'-'+s.id;se.textContent=s.n;se.hidden=true;
+  se.addEventListener('click',function(){focus(b.id,s.id);});labelsEl.appendChild(se);s.el=se;});
+});
+
+/* ---------- CAMERA ---------- */
+var cam={th:.9,ph:1.0,d:150,tth:.9,tph:1.0,td:150},tgt=new THREE.Vector3(),tmp=new THREE.Vector3(),tmp2=new THREE.Vector3(),tmp3=new THREE.Vector3(),tmp4=new THREE.Vector3(),modeT=0,clock=new THREE.Clock(),T=0;
+function sysDist(){return state.mode?560:175;}
+function minDist(){var b=BY[state.focus];return b.R*1.16;}
+function focus(id,siteId,keepView){
+ var b=BY[id],changed=state.focus!==id;state.focus=id;state.site=siteId||null;
+ if(id==='sun'){if(changed||!keepView){cam.td=sysDist();cam.tph=1.0;}}
+ else if(siteId){
+  var s=b.sites.filter(function(x){return x.id===siteId;})[0];
+  b.mesh.updateWorldMatrix(true,false);var d=tmp.copy(s.nv).applyQuaternion(b.mesh.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  var th=Math.atan2(d.z,d.x);cam.tth=th+Math.round((cam.th-th)/6.2832)*6.2832;cam.tph=Math.max(.08,Math.min(3.06,Math.acos(d.y)));cam.td=b.R*1.95;
+ } else if(changed||!keepView){cam.td=b.R*(b.kind==='belt'?40:4.2);cam.tph=1.2;}
+ try{history.replaceState(null,'','#'+id);}catch(e){}
+ render();renderRail();
+}
+function resize(){var w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+window.addEventListener('resize',resize);resize();
+
+var ptrs={},drag=null,pinch=0;
+canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId);ptrs[e.pointerId]={x:e.clientX,y:e.clientY};drag={x:e.clientX,y:e.clientY,moved:0};pinch=0;});
+canvas.addEventListener('pointermove',function(e){
+ if(!ptrs[e.pointerId])return;var p=ptrs[e.pointerId],dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+ var ids=Object.keys(ptrs);
+ if(ids.length>=2){var a=ptrs[ids[0]],b=ptrs[ids[1]],dd=Math.hypot(a.x-b.x,a.y-b.y);if(pinch)zoom(pinch/dd);pinch=dd;if(drag)drag.moved=99;return;}
+ if(drag){drag.moved+=Math.abs(dx)+Math.abs(dy);cam.tth+=dx*.006;cam.tph=Math.max(.08,Math.min(3.06,cam.tph-dy*.006));}
+});
+function up(e){var d=drag;delete ptrs[e.pointerId];if(!Object.keys(ptrs).length){drag=null;pinch=0;if(d&&d.moved<6&&e.type==='pointerup')pick(e.clientX,e.clientY);}}
+canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+function zoom(k){cam.td=Math.max(minDist(),Math.min(9000,cam.td*k));}
+canvas.addEventListener('wheel',function(e){e.preventDefault();zoom(Math.exp(e.deltaY*.0012));},{passive:false});
+function pick(x,y){var best=null,bs=1e9,H=window.innerHeight,f=1/Math.tan(camera.fov*Math.PI/360);
+ BODIES.forEach(function(b){if(b.el.hidden)return;b.grp.getWorldPosition(tmp);var dist=tmp.distanceTo(camera.position);tmp.project(camera);if(tmp.z>1)return;
+  var sx=(tmp.x*.5+.5)*window.innerWidth,sy=(-tmp.y*.5+.5)*H,rp=Math.max(16,b.R/dist*f*H/2),d=Math.hypot(sx-x,sy-y);
+  if(d<rp&&dist<bs&&!(b.id===state.focus&&b.id!=='sun')){bs=dist;best=b;}});
+ if(best)focus(best.id);}
+window.addEventListener('keydown',function(e){if(e.key==='ArrowRight')step(1);else if(e.key==='ArrowLeft')step(-1);else if(e.key==='Escape')focus('sun');});
+function step(d){var i=BODIES.indexOf(BY[state.focus]);focus(BODIES[(i+d+BODIES.length)%BODIES.length].id);}
+
+/* ---------- FRAME ---------- */
+var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(){
+ var dt=Math.min(.05,clock.getDelta()),k=reduce?1:1-Math.exp(-dt*4.5);
+ var free=state.focus==='sun'&&!reduce;if(free)T+=dt;
+ modeT+=(state.mode-modeT)*k;var e=modeT*modeT*(3-2*modeT);
+ BODIES.forEach(function(b){
+  if(b.kind==='star')return;
+  if(b.parent){var a=b.a0+T*.05/Math.sqrt(b.md);b.grp.position.set(Math.cos(a)*b.orbR,0,Math.sin(a)*b.orbR);}
+  else{var r=rStory(b.au)+(rTrue(b.au)-rStory(b.au))*e,a2=b.a0+T*.02/b.yr;b.grp.position.set(Math.cos(a2)*r,0,Math.sin(a2)*r);if(b.orbit)b.orbit.scale.setScalar(r);
+   if(b.kind==='belt'){var w=r*.09,pa=b.pts.geometry.attributes.position;for(var i=0;i<b.beltU.length;i++){var u=b.beltU[i],rr=r+u[1]*w,an=u[0]+T*.004;pa.setXYZ(i,Math.cos(an)*rr,u[2]*w*.25,Math.sin(an)*rr);}pa.needsUpdate=true;}}
+  if(free&&b.mesh)b.mesh.rotation.y+=dt*.05;
+ });
+ BY.sun.mesh.rotation.y+=dt*.01;
+ var fb=BY[state.focus];fb.grp.getWorldPosition(tmp);tgt.lerp(tmp,k);if(tgt.distanceTo(tmp)<1e-3)tgt.copy(tmp);
+ cam.th+=(cam.tth-cam.th)*k;cam.ph+=(cam.tph-cam.ph)*k;cam.d=Math.exp(Math.log(cam.d)+(Math.log(cam.td)-Math.log(cam.d))*k);
+ var sp=Math.sin(cam.ph);camera.position.set(tgt.x+cam.d*sp*Math.cos(cam.th),tgt.y+cam.d*Math.cos(cam.ph),tgt.z+cam.d*sp*Math.sin(cam.th));camera.lookAt(tgt);
+ head.intensity+=((state.focus==='sun'?0:.55)-head.intensity)*k;
+ scene.updateMatrixWorld();
+ // labels
+ var W=window.innerWidth,H=window.innerHeight;
+ BODIES.forEach(function(b){
+  b.grp.getWorldPosition(tmp);var dist=tmp.distanceTo(camera.position),show=true;
+  if(b.parent){var P=BY[b.parent];P.grp.getWorldPosition(tmp2);show=(state.focus===b.id||state.focus===b.parent||BY[state.focus].parent===b.parent)||tmp2.distanceTo(camera.position)<P.R*26;}
+  if(b.kind==='star'&&state.focus!=='sun')show=cam.d>30;
+  var F=BY[state.focus];if(state.focus!=='sun'&&cam.d<F.R*9&&b!==F&&b.parent!==F.id&&F.parent!==b.id&&!(b.parent&&b.parent===F.parent))show=false;
+  var near=state.focus===b.id&&cam.d<b.R*9;
+  tmp2.copy(tmp).project(camera);
+  if(!show||tmp2.z>1||Math.abs(tmp2.x)>1.1||Math.abs(tmp2.y)>1.1){b.el.hidden=true;}
+  else{b.el.hidden=false;var f=1/Math.tan(camera.fov*Math.PI/360),rp=b.R/dist*f*H/2;
+   b.el.style.transform='translate('+((tmp2.x*.5+.5)*W+Math.min(rp,W*.3)*.72+4).toFixed(1)+'px,'+((-tmp2.y*.5+.5)*H-Math.min(rp,H*.3)*.72-18).toFixed(1)+'px)';
+   b.el.classList.toggle('on',state.focus===b.id);}
+  b.sites.forEach(function(s){
+   var vis=s.b<=state.book;s.grp.visible=vis;
+   if(!vis||!near){s.el.hidden=true;return;}
+   var wp=s.grp.localToWorld(tmp3.copy(s.nv).multiplyScalar(1.03));
+   var facing=tmp2.copy(wp).sub(tmp).normalize().dot(tmp4.copy(camera.position).sub(tmp).normalize());
+   if(facing<.22){s.el.hidden=true;return;}
+   wp.project(camera);s.el.hidden=false;s.el.style.transform='translate('+((wp.x*.5+.5)*W+8).toFixed(1)+'px,'+((-wp.y*.5+.5)*H-10).toFixed(1)+'px)';
+   s.el.classList.toggle('on',state.site===s.id);
+  });
+ });
+ renderer.render(scene,camera);
+ requestAnimationFrame(frame);
+}
+
+/* ---------- PANELS ---------- */
+var railEl=document.getElementById('rail'),dosEl=document.getElementById('dossier'),sheetMin=false;
+function renderRail(){
+ var h='';BODIES.forEach(function(b){h+='<button id="nav-'+b.id+'" class="'+(b.parent?'moon':'')+'" data-id="'+b.id+'" aria-current="'+(state.focus===b.id)+'"><i class="dot f-'+b.fac+'"></i>'+b.name+(b.ref||b.fac==='ref'?'<span class="tag">scale</span>':'')+'</button>';});
+ h+='<div class="legend">';Object.keys(FAC).forEach(function(k){h+='<div><i class="dot f-'+k+'"></i>'+FAC[k].n+'</div>';});h+='</div>';
+ railEl.innerHTML=h;
+ var cur=railEl.querySelector('[aria-current="true"]');if(cur&&cur.scrollIntoView&&window.innerWidth<=860)cur.scrollIntoView({block:'nearest',inline:'center'});
+}
+railEl.addEventListener('click',function(e){var b=e.target.closest('button[data-id]');if(b)focus(b.dataset.id);});
+function fmt(n){return n>=100?Math.round(n).toLocaleString('en-US'):n.toFixed(n<10?2:1);}
+function time(min){return min<1?(min*60).toFixed(1)+' sec':min<90?min.toFixed(1)+' min':(min/60).toFixed(1)+' hr';}
+function bk(n){return '<span class="bk b'+n+'">'+['','I','II','III'][n]+'</span>';}
+function scaleBlock(b){
+ var ratio=b.km/6371,big=Math.max(ratio,1),er=Math.max(1.2,34/big),br=Math.max(1.2,34*ratio/big),clipB=br>34,w=150,h=88;
+ var svg='<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Size compared with Earth"><circle cx="40" cy="36" r="'+er.toFixed(1)+'" fill="#3f7fd6"/><circle cx="110" cy="36" r="'+Math.min(br,34).toFixed(1)+'" fill="'+(b.id==='earth'?'#3f7fd6':'#d6b25e')+'"/>'+
+  '<text x="40" y="'+(h-1)+'" text-anchor="middle" font-size="9" fill="#9a9686" font-family="monospace">Earth</text><text x="110" y="'+(h-1)+'" text-anchor="middle" font-size="9" fill="#9a9686" font-family="monospace">'+(b.kind==='belt'?'Ceres':b.name.replace('The ',''))+'</text></svg>';
+ var au=b.parent?BY[b.parent].au:b.au,line;
+ if(b.kind==='star')line='<strong>109 Earths wide.</strong> Earth is the blue speck on the left.';
+ else if(b.id==='earth')line='<strong>The baseline.</strong> 12,742 km across, 1 AU from the Sun (150 million km).';
+ else line='<strong>'+(ratio>=1?fmt(ratio)+' times':Math.round(ratio*100)+'% of')+' Earth\'s width</strong>'+(b.kind==='belt'?' for Ceres, its largest rock.':'.')+(b.parent?' It orbits '+BY[b.parent].name+', '+BY[b.parent].au.toFixed(2)+' AU from the Sun.':au?' '+(au>1?fmt(au)+' times farther from the Sun than Earth.':Math.round(au*100)+'% of Earth\'s distance from the Sun.'):'');
+ var st='<dl class="stats">';
+ if(au){st+='<div><dt>From the Sun</dt><dd>'+au.toFixed(2)+' AU</dd></div><div><dt>In kilometers</dt><dd>'+fmt(au*149.6)+' million</dd></div><div><dt>Sunlight takes</dt><dd>'+time(au*8.317)+'</dd></div>';
+  if(b.id!=='earth'&&b.id!=='luna')st+='<div><dt>Signal to Luna, closest</dt><dd>'+time(Math.abs(au-1)*8.317)+'</dd></div>';}
+ if(b.dkm)st+='<div><dt>From '+BY[b.parent].name+'</dt><dd>'+fmt(b.dkm)+' km</dd></div>'+(b.id!=='luna'?'<div><dt>Versus Earth to Luna</dt><dd>'+(b.dkm/384400).toFixed(2)+' times</dd></div>':'<div><dt>Light from Earth</dt><dd>1.3 sec</dd></div>');
+ st+='<div><dt>Diameter</dt><dd>'+fmt(b.km*2)+' km</dd></div>';if(b.yr)st+='<div><dt>One orbit</dt><dd>'+fmt(b.yr)+' Earth yr</dd></div>';st+='</dl>';
+ var strip='<div class="strip" aria-hidden="true">';
+ BODIES.forEach(function(p){if(p.parent||p.kind==='star'||p.kind==='belt')return;var sel=p.id===b.id||p.id===b.parent;strip+='<i class="'+(sel?'s':p.id==='earth'?'e':'')+'" style="left:'+(p.au/40*100)+'%"></i>';});
+ strip+='<b class="l" style="left:0">Sun</b><b style="left:'+(5.2/40*100)+'%">Jupiter</b><b style="left:'+(19.2/40*100)+'%">Uranus</b><b class="r" style="left:100%">Pluto</b></div><p class="note">Planet distances drawn to true scale. Earth is the blue dot'+(au&&b.id!=='earth'?', this world is gold':'')+'.</p>';
+ return '<div class="cmp">'+svg+'<p>'+line+'</p></div>'+st+strip;
+}
+function render(){
+ var b=BY[state.focus],B=state.book,h='';
+ h+='<header><div class="eyebrow"><i class="dot f-'+b.fac+'"></i>'+(b.kind==='moon'?'Moon of '+BY[b.parent].name:b.kind==='star'?'Star':b.kind==='belt'?'Asteroid belt':'Planet')+' &middot; '+FAC[b.fac].n+'</div><h2>'+b.name+'</h2><p class="tagline">'+b.tag+'</p>'+
+  '<div class="nav"><button id="prev">&larr; Previous</button><button id="next">Next &rarr;</button><button id="sheetToggle">'+(sheetMin?'Open':'Minimize')+'</button></div></header>';
+ h+='<div class="sec"><p>'+b.blurb+'</p>'+(b.ref?'<p class="note">Little or no role in books I to III. Included so you can judge scale and distance.</p>':'')+'</div>';
+ h+='<div class="sec"><h3>Scale against Earth</h3>'+scaleBlock(b)+'</div>';
+ var rule=(b.rule||[]).filter(function(r){return r.b<=B;});
+ if(rule.length)h+='<div class="sec"><h3>Who rules here</h3><ul class="rule">'+rule.map(function(r){return '<li>'+bk(r.b)+'<span>'+r.t+'</span></li>';}).join('')+'</ul></div>';
+ var ch=(b.chars||[]).filter(function(c){return (c.b||1)<=B;});
+ if(ch.length)h+='<div class="sec"><h3>Key characters</h3><ul class="chars">'+ch.map(function(c){return '<li><i class="c" style="background:'+CASTE[c.c]+'" title="'+c.c+'"></i><div><strong>'+c.n+'</strong><em>'+c.c+' &middot; '+c.tie+'</em><span>'+c.x+'</span></div></li>';}).join('')+'</ul></div>';
+ var si=b.sites.filter(function(s){return s.b<=B;});
+ if(si.length)h+='<div class="sec"><h3>Places to explore</h3><div class="sites">'+si.map(function(s){return '<button id="site-'+b.id+'-'+s.id+'" data-site="'+s.id+'" aria-current="'+(state.site===s.id)+'"><span class="t">'+s.n+'<span class="k">'+{city:'City',fort:'Stronghold',mine:'Mine',battle:'Battle',wild:'Wilds'}[s.k]+' &middot; '+['','I','II','III'][s.b]+'</span></span><span class="d">'+s.x+'</span></button>';}).join('')+'</div><p class="note" style="margin-top:8px">Positions on the globe are approximate. The books give few coordinates.</p></div>';
+ var ev=(b.events||[]).filter(function(x){return x.b<=B;});
+ if(ev.length)h+='<div class="sec"><h3>What happens here</h3><ul class="ev">'+ev.map(function(x){return '<li>'+bk(x.b)+'<div><strong>'+x.h+'</strong><span>'+x.x+'</span></div></li>';}).join('')+'</ul></div>';
+ var hidden=(b.events||[]).length-ev.length+b.sites.length-si.length;
+ if(hidden>0)h+='<div class="sec"><p class="note">'+hidden+' more '+(hidden===1?'entry is':'entries are')+' hidden to avoid spoilers. Raise "Spoilers through" to see '+(hidden===1?'it':'them')+'.</p></div>';
+ if(b.id==='sun')h+='<div class="sec"><h3>How to read this map</h3><p>Gold orbits are Core worlds held by the Sovereign. Red is Mars. Teal is the Rim. Grey worlds are here for scale.</p><p>Story view squeezes the outer planets in so everything fits. True scale spaces the orbits correctly: zoom out and see how far the Rim really is. Planet sizes are enlarged in both views, so use the Earth comparison above for true size.</p></div>';
+ dosEl.innerHTML=h;dosEl.classList.toggle('min',sheetMin);
+ if(state.site){var cur=dosEl.querySelector('.sites [aria-current="true"]');if(cur&&window.innerWidth>860)cur.scrollIntoView({block:'nearest'});}else dosEl.scrollTop=0;
+ document.getElementById('hint').textContent=b.sites.length&&b.id!=='sun'?'Drag to spin '+b.name+'. Scroll to zoom in on its cities.':'Drag to rotate. Scroll to zoom. Click a world or a place.';
+}
+dosEl.addEventListener('click',function(e){var t=e.target.closest('button');if(!t)return;
+ if(t.dataset.site)focus(state.focus,t.dataset.site);else if(t.id==='prev')step(-1);else if(t.id==='next')step(1);else if(t.id==='sheetToggle'){sheetMin=!sheetMin;render();}});
+function syncBar(){
+ [].forEach.call(document.querySelectorAll('#books button'),function(b){b.setAttribute('aria-pressed',String(+b.dataset.b===state.book));});
+ [].forEach.call(document.querySelectorAll('#scale button'),function(b){b.setAttribute('aria-pressed',String(+b.dataset.m===state.mode));});}
+document.getElementById('books').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;state.book=+b.dataset.b;try{localStorage.setItem('rra-book',state.book);}catch(x){}
+ if(state.site){var s=BY[state.focus].sites.filter(function(q){return q.id===state.site;})[0];if(s&&s.b>state.book)state.site=null;}syncBar();render();});
+document.getElementById('scale').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;state.mode=+b.dataset.m;syncBar();if(state.focus==='sun')cam.td=sysDist();});
+document.getElementById('home').addEventListener('click',function(){focus('sun');});
+function fromHash(){var id=(location.hash||'').slice(1);if(BY[id]&&id!==state.focus)focus(id);}
+window.addEventListener('hashchange',fromHash);
+
+syncBar();renderRail();render();
+var h0=(location.hash||'').slice(1);if(BY[h0]&&h0!=='sun'){focus(h0);cam.d=cam.td;cam.ph=cam.tph;BY[h0].grp.getWorldPosition(tgt);}
+window.__atlas={state:state,focus:focus,cam:cam};
+frame();
+})();
+</script>
